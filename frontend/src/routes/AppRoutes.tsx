@@ -1,30 +1,99 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import LandingPage from "../pages/Landing/LandingPage";
-import LoginPage from "../pages/Auth/LoginPage";
-import SignupPage from "../pages/Auth/SignupPage";
-import DashboardPage from "../pages/Dashboard/DashboardPage";
-import DocumentsPage from "../pages/Documents/DocumentsPage";
-import SearchPage from "../pages/Search/SearchPage";
-import ChatPage from "../pages/Chat/ChatPage";
-import SettingsPage from "../pages/Settings/SettingsPage";
-import NotFoundPage from "../pages/NotFound/NotFoundPage";
+import DashboardLayout from "../layouts/DashboardLayout";
+import DashboardPage from "../features/dashboard/pages/DashboardPage";
+
+function PlaceholderPage({ title }: { title: string }) {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-white">{title}</h1>
+
+        <p className="mt-2 text-slate-400">
+          This feature is coming in the next StudyOS version.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  return <DashboardLayout>{children}</DashboardLayout>;
+}
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* 404 Page */}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardShell>
+              <DashboardPage />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/documents"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="Documents" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/search"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="AI Search" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/chat"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="AI Chat" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/study"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="Study Assistant" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/timeline"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="Timeline" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <DashboardShell>
+              <PlaceholderPage title="Settings" />
+            </DashboardShell>
+          }
+        />
+
+        <Route
+          path="*"
+          element={<Navigate to="/dashboard" replace />}
+        />
       </Routes>
     </BrowserRouter>
   );
