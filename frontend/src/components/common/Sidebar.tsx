@@ -89,33 +89,23 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <div className="mt-auto">
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-          <p className="text-xs text-slate-500">
-            Logged in as
-          </p>
+<div className="mt-auto">
+  <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+    <p className="text-xs text-slate-500">
+      Logged in as
+    </p>
 
-          <div className="mt-2 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-white">
-                Anu
-              </h2>
+    <div className="mt-2">
+      <h2 className="truncate font-semibold text-white">
+        Anu
+      </h2>
 
-              <p className="text-xs text-slate-500">
-                Student
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-800 hover:text-red-400"
-              title="Logout"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-      </div>
+      <p className="text-xs text-slate-500">
+        StudyOS Student
+      </p>
+    </div>
+  </div>
+</div>
     </aside>
   );
 }

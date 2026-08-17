@@ -1,99 +1,145 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+} from "react-router-dom";
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 
-function PlaceholderPage({ title }: { title: string }) {
+import LoginPage from "../pages/Auth/LoginPage";
+import SignupPage from "../pages/Auth/SignupPage";
+import LandingPage from "../pages/Landing/LandingPage";
+
+import ProtectedRoute from "./ProtectedRoute";
+
+function ProtectedLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <ProtectedRoute>
+      <DashboardLayout>
+        {children}
+      </DashboardLayout>
+    </ProtectedRoute>
+  );
+}
+
+function PlaceholderPage({
+  title,
+}: {
+  title: string;
+}) {
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white">{title}</h1>
+        <h1 className="text-3xl font-bold text-white">
+          {title}
+        </h1>
 
         <p className="mt-2 text-slate-400">
-          This feature is coming in the next StudyOS version.
+          This feature is coming soon.
         </p>
       </div>
     </div>
   );
 }
 
-function DashboardShell({ children }: { children: React.ReactNode }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
-}
-
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
+        {/* Public */}
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
+
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/signup"
+          element={<SignupPage />}
+        />
+
+        {/* Protected */}
         <Route
           path="/dashboard"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <DashboardPage />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/documents"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="Documents" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/search"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="AI Search" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/chat"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="AI Chat" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/study"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="Study Assistant" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/timeline"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="Timeline" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
         <Route
           path="/settings"
           element={
-            <DashboardShell>
+            <ProtectedLayout>
               <PlaceholderPage title="Settings" />
-            </DashboardShell>
+            </ProtectedLayout>
           }
         />
 
+        {/* Unknown route */}
         <Route
           path="*"
-          element={<Navigate to="/dashboard" replace />}
+          element={<Navigate to="/" replace />}
         />
+
       </Routes>
     </BrowserRouter>
   );
