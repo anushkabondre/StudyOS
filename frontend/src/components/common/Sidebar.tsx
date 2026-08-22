@@ -6,7 +6,6 @@ import {
   GraduationCap,
   CalendarDays,
   Settings,
-  LogOut,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import {
   BrowserRouter,
   Navigate,
@@ -8,6 +9,9 @@ import {
 
 import DashboardLayout from "../layouts/DashboardLayout";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
+
+import DocumentsPage from "../pages/Documents/DocumentsPage";
+import SupabaseAuthTest from "../pages/Auth/SupabaseAuthTest";
 
 import LoginPage from "../pages/Auth/LoginPage";
 import SignupPage from "../pages/Auth/SignupPage";
@@ -55,6 +59,7 @@ export default function AppRoutes() {
       <Routes>
 
         {/* Public */}
+
         <Route
           path="/"
           element={<LandingPage />}
@@ -70,7 +75,14 @@ export default function AppRoutes() {
           element={<SignupPage />}
         />
 
+        {/* Temporary auth test */}
+        <Route
+          path="/supabase-test"
+          element={<SupabaseAuthTest />}
+        />
+
         {/* Protected */}
+
         <Route
           path="/dashboard"
           element={
@@ -84,7 +96,7 @@ export default function AppRoutes() {
           path="/documents"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Documents" />
+              <DocumentsPage />
             </ProtectedLayout>
           }
         />
@@ -135,9 +147,15 @@ export default function AppRoutes() {
         />
 
         {/* Unknown route */}
+
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
         />
 
       </Routes>

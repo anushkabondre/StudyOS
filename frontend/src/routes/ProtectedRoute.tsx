@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
-import { useAuthContext } from "../context/AuthContext";
+import {
+  useSupabaseAuth,
+} from "../context/SupabaseAuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,7 +12,17 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({
   children,
 }: ProtectedRouteProps) {
-  const { user, loading } = useAuthContext();
+  const {
+    user,
+    loading,
+  } = useSupabaseAuth();
+  console.log(
+  "PROTECTED ROUTE:",
+  {
+    user: user?.email ?? null,
+    loading,
+  }
+);
 
   if (loading) {
     return (
@@ -27,7 +39,12 @@ export default function ProtectedRoute({
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/supabase-test"
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

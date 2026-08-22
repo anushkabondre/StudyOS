@@ -5,21 +5,29 @@ import {
   LogOut,
 } from "lucide-react";
 
-import { useAuthContext } from "../../context/AuthContext";
+import {
+  useSupabaseAuth,
+} from "../../context/SupabaseAuthContext";
 
 export default function Navbar() {
-  const { user, logout } = useAuthContext();
+  const {
+  user,
+  signOut,
+} = useSupabaseAuth();
 
   async function handleLogout() {
     try {
-      await logout();
+      await signOut();
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error(
+        "Logout failed:",
+        error
+      );
     }
   }
 
   const displayName =
-    user?.displayName ||
+    user?.user_metadata?.full_name ||
     user?.email?.split("@")[0] ||
     "Student";
 
@@ -73,9 +81,12 @@ export default function Navbar() {
           <div className="flex items-center gap-3 border-l border-slate-800 pl-4">
 
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-blue-600 font-semibold text-white">
-              {user?.photoURL ? (
+              {user?.user_metadata?.avatar_url ? (
                 <img
-                  src={user.photoURL}
+                  src={
+                    user.user_metadata
+                      .avatar_url
+                  }
                   alt={displayName}
                   className="h-full w-full object-cover"
                 />
