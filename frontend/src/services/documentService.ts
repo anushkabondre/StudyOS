@@ -1,5 +1,5 @@
 import { supabase } from "../supabase/supabase";
-
+import { extractText } from "./extraction/textExtractor";
 export interface DocumentRecord {
   id: string;
   user_id: string;
@@ -7,6 +7,10 @@ export interface DocumentRecord {
   file_path: string;
   file_type: string | null;
   file_size: number | null;
+  extracted_text: string | null;
+  processing_status: string;
+  extraction_method: string | null;
+  processed_at: string | null;
   created_at: string;
 }
 
@@ -48,6 +52,16 @@ export async function uploadDocument(
   );
 
   const filePath = `${userId}/${crypto.randomUUID()}-${safeFileName}`;
+  let extractedText = "";
+
+try {
+  extractedText = await extractText(file);
+} catch (error) {
+  console.warn(
+    "Text extraction failed:",
+    error
+  );
+}
 
   const { error: uploadError } =
     await supabase.storage
@@ -68,12 +82,25 @@ export async function uploadDocument(
     await supabase
       .from("documents")
       .insert({
-        user_id: userId,
-        name: file.name,
-        file_path: filePath,
-        file_type: file.type,
-        file_size: file.size,
-      })
+  user_id: userId,
+  name: file.name,
+  file_path: filePath,
+  file_type: file.type,
+  file_size: file.size,
+  extracted_text: extractedText,
+  processing_status:
+    extractedText.trim().length > 0
+      ? "completed"
+      : "pending",
+  extraction_method:
+    extractedText.trim().length > 0
+      ? "text"
+      : null,
+  processed_at:
+    extractedText.trim().length > 0
+      ? new Date().toISOString()
+      : null,
+})
       .select()
       .single();
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-
+import ExtractionTestPage from "../pages/Documents/ExtractionTestPage";
 import {
   BrowserRouter,
   Navigate,
@@ -74,6 +74,10 @@ export default function AppRoutes() {
           path="/signup"
           element={<SignupPage />}
         />
+        <Route
+  path="/extraction-test"
+  element={<ExtractionTestPage />}
+/>
 
         {/* Temporary auth test */}
         <Route
