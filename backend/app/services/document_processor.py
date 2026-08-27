@@ -163,3 +163,27 @@ def process_pptx_document(
         raise RuntimeError(
             f"PPTX processing failed: {error}"
         ) from error
+def process_document(
+    document_id: str,
+) -> dict:
+    document = get_document(document_id)
+
+    file_type = document.get("file_type") or ""
+
+    if file_type.startswith("image/"):
+        # Image processing will be connected here.
+        raise RuntimeError(
+            "Image document processing is not connected yet."
+        )
+
+    if file_type in (
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ):
+        return process_pptx_document(
+            document_id
+        )
+
+    raise RuntimeError(
+        f"Unsupported document type: {file_type}"
+    )

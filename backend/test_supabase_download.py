@@ -1,6 +1,5 @@
 from app.services.document_processor import (
-    get_document,
-    process_pptx_document,
+    process_document,
 )
 from app.supabase_client import supabase
 
@@ -28,16 +27,16 @@ if not response.data:
     )
 
 
-document_id = response.data[0]["id"]
+document = response.data[0]
 
 print("Testing document:")
-print("ID:", document_id)
-print("Name:", response.data[0]["name"])
-print("Type:", response.data[0]["file_type"])
+print("ID:", document["id"])
+print("Name:", document["name"])
+print("Type:", document["file_type"])
 
 
-result = process_pptx_document(
-    document_id
+result = process_document(
+    document["id"]
 )
 
 
