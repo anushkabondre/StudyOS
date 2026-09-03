@@ -22,10 +22,11 @@ import {
 
 import {
   deleteDocument,
-  downloadDocument,
-  getDocuments,
-  uploadDocument,
-  type DocumentRecord,
+downloadDocument,
+getDocuments,
+processDocument,
+uploadDocument,
+type DocumentRecord,
 } from "../../services/documentService";
 
 function formatFileSize(
@@ -115,45 +116,65 @@ export default function DocumentsPage() {
   }, [user]);
 
   async function handleFileChange(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    const file =
-      event.target.files?.[0];
+  event: ChangeEvent<HTMLInputElement>
+) {
+  const file =
+    event.target.files?.[0];
 
-    if (!file || !user) {
-      return;
-    }
+  if (!file || !user) {
+    return;
+  }
 
-    try {
-      setUploading(true);
-      setError("");
-      setMessage("");
+  try {
+    setUploading(true);
+    setError("");
+    setMessage("");
 
+    // Step 1: Upload the document
+    const uploadedDocument =
       await uploadDocument(
         user.id,
         file
       );
 
-      setMessage(
-        `${file.name} uploaded successfully.`
-      );
+    setMessage(
+      `${file.name} uploaded. Processing...`
+    );
 
-      await loadDocuments();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Upload failed."
-      );
-    } finally {
-      setUploading(false);
+    // Refresh so the pending document appears
+    await loadDocuments();
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+    // Step 2: Process the document
+    await processDocument(
+      uploadedDocument.id
+    );
+
+    setMessage(
+      `${file.name} processed successfully.`
+    );
+
+    // Step 3: Refresh with OCR/extracted data
+    await loadDocuments();
+
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Document processing failed."
+    );
+
+    // Refresh in case the document was uploaded
+    // before processing failed
+    await loadDocuments();
+
+  } finally {
+    setUploading(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
-
+}
   async function handleDownload(
     documentRecord: DocumentRecord
   ) {

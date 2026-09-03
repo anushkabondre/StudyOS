@@ -1,5 +1,5 @@
 import { supabase } from "../supabase/supabase";
-import { extractText } from "./extraction/textExtractor";
+
 export interface DocumentRecord {
   id: string;
   user_id: string;
@@ -11,10 +11,13 @@ export interface DocumentRecord {
   processing_status: string;
   extraction_method: string | null;
   processed_at: string | null;
+  ocr_confidence: number | null;
   created_at: string;
 }
 
 const BUCKET_NAME = "documents";
+
+const BACKEND_URL = "http://127.0.0.1:8000";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -29,6 +32,11 @@ const ALLOWED_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+
+// --------------------------------------------------
+// Upload Document
+// --------------------------------------------------
 
 export async function uploadDocument(
   userId: string,
@@ -51,18 +59,10 @@ export async function uploadDocument(
     "_"
   );
 
-  const filePath = `${userId}/${crypto.randomUUID()}-${safeFileName}`;
-  let extractedText = "";
+  const filePath =
+    `${userId}/${crypto.randomUUID()}-${safeFileName}`;
 
-try {
-  extractedText = await extractText(file);
-} catch (error) {
-  console.warn(
-    "Text extraction failed:",
-    error
-  );
-}
-
+  // Upload file to Supabase Storage
   const { error: uploadError } =
     await supabase.storage
       .from(BUCKET_NAME)
@@ -78,29 +78,22 @@ try {
     );
   }
 
+  // Create database record
   const { data, error: insertError } =
     await supabase
       .from("documents")
       .insert({
-  user_id: userId,
-  name: file.name,
-  file_path: filePath,
-  file_type: file.type,
-  file_size: file.size,
-  extracted_text: extractedText,
-  processing_status:
-    extractedText.trim().length > 0
-      ? "completed"
-      : "pending",
-  extraction_method:
-    extractedText.trim().length > 0
-      ? "text"
-      : null,
-  processed_at:
-    extractedText.trim().length > 0
-      ? new Date().toISOString()
-      : null,
-})
+        user_id: userId,
+        name: file.name,
+        file_path: filePath,
+        file_type: file.type,
+        file_size: file.size,
+        extracted_text: null,
+        processing_status: "pending",
+        extraction_method: null,
+        processed_at: null,
+        ocr_confidence: null,
+      })
       .select()
       .single();
 
@@ -116,6 +109,62 @@ try {
 
   return data as DocumentRecord;
 }
+
+
+// --------------------------------------------------
+// Process Document
+// --------------------------------------------------
+
+export async function processDocument(
+  documentId: string
+): Promise<DocumentRecord> {
+  const response = await fetch(
+    `${BACKEND_URL}/documents/${documentId}/process`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  let responseData: unknown = null;
+
+  try {
+    responseData = await response.json();
+  } catch {
+    responseData = null;
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof responseData === "object" &&
+      responseData !== null &&
+      "detail" in responseData &&
+      typeof responseData.detail === "string"
+        ? responseData.detail
+        : "Document processing failed.";
+
+    throw new Error(message);
+  }
+
+  if (
+    typeof responseData !== "object" ||
+    responseData === null ||
+    !("document" in responseData)
+  ) {
+    throw new Error(
+      "Invalid response received from document processor."
+    );
+  }
+
+  return responseData.document as DocumentRecord;
+}
+
+
+// --------------------------------------------------
+// Get Documents
+// --------------------------------------------------
 
 export async function getDocuments(): Promise<
   DocumentRecord[]
@@ -136,6 +185,11 @@ export async function getDocuments(): Promise<
 
   return (data ?? []) as DocumentRecord[];
 }
+
+
+// --------------------------------------------------
+// Download Document
+// --------------------------------------------------
 
 export async function downloadDocument(
   documentRecord: DocumentRecord
@@ -172,6 +226,11 @@ export async function downloadDocument(
 
   URL.revokeObjectURL(url);
 }
+
+
+// --------------------------------------------------
+// Delete Document
+// --------------------------------------------------
 
 export async function deleteDocument(
   documentRecord: DocumentRecord

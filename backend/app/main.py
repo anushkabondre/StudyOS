@@ -1,12 +1,16 @@
 from fastapi import (
     FastAPI,
-    File,
     HTTPException,
+    File,
     UploadFile,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.ocr_service import (
     extract_text_from_image,
+)
+from app.services.document_processor import (
+    process_document,
 )
 
 
@@ -16,6 +20,26 @@ app = FastAPI(
 )
 
 
+# --------------------------------------------------
+# CORS
+# --------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# --------------------------------------------------
+# Health Check
+# --------------------------------------------------
+
 @app.get("/health")
 def health_check():
     return {
@@ -23,6 +47,10 @@ def health_check():
         "service": "StudyOS API",
     }
 
+
+# --------------------------------------------------
+# Direct Image OCR
+# --------------------------------------------------
 
 @app.post("/ocr")
 async def ocr_image(
@@ -34,9 +62,7 @@ async def ocr_image(
             detail="File type could not be determined.",
         )
 
-    if not file.content_type.startswith(
-        "image/"
-    ):
+    if not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
             detail="OCR currently supports image files only.",
@@ -64,4 +90,35 @@ async def ocr_image(
         raise HTTPException(
             status_code=500,
             detail=f"OCR processing failed: {error}",
+        ) from error
+
+
+# --------------------------------------------------
+# Process Stored Document
+# --------------------------------------------------
+
+@app.post("/documents/{document_id}/process")
+def process_stored_document(
+    document_id: str,
+):
+    try:
+        result = process_document(
+            document_id
+        )
+
+        return {
+            "success": True,
+            "document": result,
+        }
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Document processing failed: {error}",
         ) from error
