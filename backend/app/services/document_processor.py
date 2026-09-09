@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from io import BytesIO
-
+import pypdfium2 as pdfium
 from pptx import Presentation
 from docx import Document
 from pypdf import PdfReader
@@ -242,7 +242,7 @@ def process_pptx_document(
         ) from error
 
 
-# --------------------------------------------------
+## --------------------------------------------------
 # PDF processing
 # --------------------------------------------------
 
@@ -270,12 +270,106 @@ def extract_text_from_pdf(
     return "\n\n".join(page_texts)
 
 
+def extract_text_from_scanned_pdf(
+    file_bytes: bytes,
+) -> tuple[str, float]:
+    pdf = pdfium.PdfDocument(
+        file_bytes
+    )
+
+    page_texts: list[str] = []
+    confidences: list[float] = []
+
+    try:
+        for page_number in range(
+            len(pdf)
+        ):
+            page = pdf[page_number]
+
+            try:
+                # Render PDF page as an image
+                bitmap = page.render(
+                    scale=3.0
+                )
+
+                pil_image = bitmap.to_pil()
+
+                image_buffer = BytesIO()
+
+                pil_image.save(
+                    image_buffer,
+                    format="PNG",
+                )
+
+                image_bytes = (
+                    image_buffer.getvalue()
+                )
+
+                # Run PaddleOCR
+                ocr_result = (
+                    extract_text_from_image(
+                        image_bytes
+                    )
+                )
+
+                text = ocr_result.get(
+                    "text",
+                    "",
+                ).strip()
+
+                confidence = float(
+                    ocr_result.get(
+                        "confidence",
+                        0.0,
+                    )
+                )
+
+                if text:
+                    page_texts.append(
+                        f"[Page {page_number + 1}]\n{text}"
+                    )
+
+                if text:
+                    confidences.append(
+                        confidence
+                    )
+
+            finally:
+                page.close()
+
+    finally:
+        pdf.close()
+
+    full_text = "\n\n".join(
+        page_texts
+    )
+
+    average_confidence = (
+        sum(confidences)
+        / len(confidences)
+        if confidences
+        else 0.0
+    )
+
+    return (
+        full_text,
+        round(
+            average_confidence,
+            4,
+        ),
+    )
+
+
 def process_pdf_document(
     document_id: str,
 ) -> dict:
-    document = get_document(document_id)
+    document = get_document(
+        document_id
+    )
 
-    file_type = document.get("file_type") or ""
+    file_type = document.get(
+        "file_type"
+    ) or ""
 
     if file_type != "application/pdf":
         raise RuntimeError(
@@ -295,21 +389,45 @@ def process_pdf_document(
             document["file_path"]
         )
 
-        extracted_text = extract_text_from_pdf(
+        # First try normal PDF text extraction
+        extracted_text = (
+            extract_text_from_pdf(
+                file_bytes
+            )
+        )
+
+        if extracted_text.strip():
+            updated_document = (
+                update_document(
+                    document_id,
+                    extracted_text=extracted_text,
+                    processing_status="completed",
+                    extraction_method="pypdf",
+                    ocr_confidence=None,
+                )
+            )
+
+            return updated_document
+
+        # No text found → treat PDF as scanned
+        (
+            ocr_text,
+            ocr_confidence,
+        ) = extract_text_from_scanned_pdf(
             file_bytes
         )
 
-        if not extracted_text.strip():
+        if not ocr_text.strip():
             raise RuntimeError(
-                "No text could be extracted from this PDF."
+                "No text could be extracted from this PDF, even after OCR."
             )
 
         updated_document = update_document(
             document_id,
-            extracted_text=extracted_text,
+            extracted_text=ocr_text,
             processing_status="completed",
-            extraction_method="pypdf",
-            ocr_confidence=None,
+            extraction_method="paddleocr",
+            ocr_confidence=ocr_confidence,
         )
 
         return updated_document
@@ -326,7 +444,6 @@ def process_pdf_document(
         raise RuntimeError(
             f"PDF processing failed: {error}"
         ) from error
-
 # --------------------------------------------------
 # TXT processing
 # --------------------------------------------------
